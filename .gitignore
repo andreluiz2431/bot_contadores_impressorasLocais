@@ -1,0 +1,6 @@
+# build output
+dist/
+build/
+
+# environment variables
+.env

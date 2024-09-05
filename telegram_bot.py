@@ -1,6 +1,18 @@
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 from pysnmp.hlapi import getCmd, SnmpEngine, CommunityData, UdpTransportTarget, ContextData, ObjectType, ObjectIdentity
+from dotenv import load_dotenv
+import os
+
+# Carrega as variáveis do arquivo .env
+load_dotenv()
+
+# Obtém o token do ambiente
+TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+
+if not TOKEN:
+    raise ValueError("O token do bot não foi encontrado. Verifique seu arquivo .env.")
+
 
 # Dicionário com IPs das impressoras, seus respectivos locais e NID
 printers = {
@@ -69,9 +81,6 @@ def get_snmp_data(ip, oid):
     except Exception as e:
         print(f"Falha ao conectar com a impressora {ip}: {e}")
         return None
-
-# Substitua 'YOUR_TOKEN' pelo token do seu bot
-TOKEN = '7015508221:AAE0ZJ2bPH-fKzMrNwvQ0fcawq0Q_75KcCY'
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text('Olá! Envie "/contadores" para executar a busca por contadores das impressoras.')

@@ -1,6 +1,7 @@
-# build output
+# dist
 dist/
 
+# build
 build/
 
 # environment variables

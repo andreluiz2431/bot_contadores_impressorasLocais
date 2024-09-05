@@ -1,44 +1,23 @@
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 from pysnmp.hlapi import getCmd, SnmpEngine, CommunityData, UdpTransportTarget, ContextData, ObjectType, ObjectIdentity
+from dotenv import load_dotenv
+import os
+
+# Carrega as variáveis do arquivo .env
+load_dotenv()
+
+# Obtém o token do ambiente
+TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+
+if not TOKEN:
+    raise ValueError("O token do bot não foi encontrado. Verifique seu arquivo .env.")
+
 
 # Dicionário com IPs das impressoras, seus respectivos locais e NID
 printers = {
-    '192.168.2.158': ('DC Caixa Central', '1017'),
-    '192.168.2.159': ('DC Tintas e Ferragens', '1333'),
-    '192.168.2.160': ('DC Coopservice', '1001'),
-    '192.168.2.162': ('DC Lançamento Notas', '1005'),
-    '192.168.2.163': ('DC Balcão de Peças - dir', '184'),
-    '192.168.2.164': ('DC Balcão de Peças - esq', '177'),
-    '192.168.2.22': ('DC Agroelétrica', '1036'),
-    '192.168.2.24': ('DC Compras', '724'),
-    '192.168.2.241': ('DC Depósito de Ração', '1016'),
-    '192.168.2.88': ('DC Veterinária', '1229'),
-    '192.168.3.147': ('BR Fabrica de Ração', '1270'),
-    '192.168.3.148': ('BR Usina', '1404'),
-    '192.168.3.149': ('BR Portaria', '193'),
-    '192.168.3.150': ('BR Balança', '1172'),
-    '192.168.3.151': ('BR Almoxarifado', '1202'),
-    '192.168.3.152': ('BR Expedição', '1349'),
-    '192.168.3.153': ('BR Ambulatório', '1271'),
-    '192.168.3.156': ('BR Audiometria', '605'),
-    '192.168.3.154': ('BR Administração', '967'),
-    '192.168.3.155': ('BR SESMT', '59'),
-    '192.168.3.157': ('BR Secagem', '643'),
-    '192.168.3.159': ('BR Manutenção', '281'),
-    '192.168.3.160': ('BR Refeitório', '535'),
-    '192.168.3.190': ('BR Afuncaal', '1040'),
-    '192.168.3.192': ('BR Sementeiro', '187'),
-    '192.168.4.155': ('MR Balança', '2378'),
-    '192.168.4.156': ('MR Unitec', '149'),
-    '192.168.4.157': ('MR Insumos', '181'),
-    '192.168.5.202': ('VA Contabilidade', '3210'),
-    '192.168.5.204': ('VA Associados', '1051'),
-    '192.168.5.205': ('VA Recursos Humanos', '3305'),
-    '192.168.5.206': ('VA Jurídico', '1364'),
-    '192.168.5.210': ('VA Marketing', '3156'),
-    '192.168.5.230': ('VA Informática', '285'),
-    '192.168.6.35': ('RSM Balança', '54'),
+    '192.168.x.x': ('XxxxxxxNome', 'XxxxxxxCódigo'),
+    '192.168.x.x': ('XxxxxxxNome', 'XxxxxxCódigo'),
 }
 
 # OID para o contador de páginas (verifique a OID correta para sua impressora)
@@ -69,9 +48,6 @@ def get_snmp_data(ip, oid):
     except Exception as e:
         print(f"Falha ao conectar com a impressora {ip}: {e}")
         return None
-
-# Substitua 'YOUR_TOKEN' pelo token do seu bot
-TOKEN = '7015508221:AAE0ZJ2bPH-fKzMrNwvQ0fcawq0Q_75KcCY'
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text('Olá! Envie "/contadores" para executar a busca por contadores das impressoras.')

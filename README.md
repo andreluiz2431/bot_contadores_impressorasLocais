@@ -32,6 +32,17 @@ TELEGRAM_BOT_TOKEN=seu_token_aqui
 
 Substitua seu_token_aqui pelo token do bot Telegram fornecido pelo BotFather.
 
+### 2.2. Criar o Arquivo printers.json
+Crie um arquivo chamado printers.json na raiz do projeto com o seguinte conteúdo (IP, Nome e Código):
+
+{
+    "192.168.0.000": ["Xxxxxxx", "000"],
+    "192.168.0.000": ["Xxxxxxx", "000"],
+    ...
+}
+
+Substitua seu_token_aqui pelo token do bot Telegram fornecido pelo BotFather.
+
 ## 3. Executar o Código
 Após configurar as dependências e o arquivo .env, você pode executar o bot com o comando:
 

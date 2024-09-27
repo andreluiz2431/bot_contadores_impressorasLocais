@@ -70,7 +70,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "/buscarErro - Lista todas as impressoras que apresentaram erro ao tentar exibir os contadores."
         "/comandos - Lista todos os coamdos disponíveis no bot, com exemplos."
         "/remover NID:<NID> - Remove uma impressora da lista de impressoras com base no NID"
-        "/removerIP IP:<IP> - Remove uma impressora da lista de impressoras com base no IP"
+        "/remover IP:<IP> - Remove uma impressora da lista de impressoras com base no IP"
     )
     
 async def contadores(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -241,7 +241,7 @@ async def comandos(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         ("/buscarErro", "Lista todas as impressoras que apresentaram erro ao tentar exibir os contadores."),
         ("/comandos", "Lista todos os comandos disponíveis no bot, com exemplos."),
         ("/remover NID:<NID>", "Remove uma impressora da lista de impressoras com base no NID"),
-        ("/removerIP IP:<IP>", "Remove uma impressora da lista de impressoras com base no IP"),
+        ("/remover IP:<IP>", "Remove uma impressora da lista de impressoras com base no IP"),
     ]
 
     # Enviar cada comando e descrição em uma mensagem separada

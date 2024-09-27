@@ -331,6 +331,48 @@ async def buscar_erro(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     except Exception as e:
         await update.message.reply_text(f"Ocorreu um erro ao buscar impressoras com problema: {e}")
 
+async def remover_impressora(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Remove uma impressora da lista de impressoras com base no NID ou IP."""
+    try:
+        # Extrair o parâmetro NID ou IP do comando
+        match_nid = re.search(r'NID:(\d+)', update.message.text)
+        match_ip = re.search(r'IP:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', update.message.text)
+
+        if match_nid:
+            nid = match_nid.group(1)
+
+            # Procurar e remover a impressora pelo NID
+            printer_to_remove = None
+            for ip, (location, printer_nid) in list(printers.items()):
+                if printer_nid == nid:
+                    printer_to_remove = ip
+                    break
+
+            if printer_to_remove:
+                del printers[printer_to_remove]
+                with open('printers.json', 'w') as file:
+                    json.dump(printers, file, indent=4)
+                await update.message.reply_text(f"Impressora com NID {nid} removida com sucesso.")
+            else:
+                await update.message.reply_text(f"Impressora com NID {nid} não encontrada.")
+        
+        elif match_ip:
+            ip = match_ip.group(1)
+
+            # Procurar e remover a impressora pelo IP
+            if ip in printers:
+                del printers[ip]
+                with open('printers.json', 'w') as file:
+                    json.dump(printers, file, indent=4)
+                await update.message.reply_text(f"Impressora com IP {ip} removida com sucesso.")
+            else:
+                await update.message.reply_text(f"Impressora com IP {ip} não encontrada.")
+        else:
+            await update.message.reply_text("Comando inválido. Use o formato: /remover NID:<NID> ou /remover IP:<IP>")
+    
+    except Exception as e:
+        await update.message.reply_text(f"Ocorreu um erro ao remover a impressora: {e}")
+
 def main() -> None:
     application = Application.builder().token(TOKEN).build()
 
@@ -345,6 +387,7 @@ def main() -> None:
     application.add_handler(CommandHandler('adicionar', adicionar_impressora))
     application.add_handler(CommandHandler('buscar', buscar_setor))
     application.add_handler(CommandHandler('buscarErro', buscar_erro))
+    application.add_handler(CommandHandler('remover', remover_impressora))
 
     application.run_polling()
 

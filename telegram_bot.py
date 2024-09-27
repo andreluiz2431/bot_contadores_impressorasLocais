@@ -238,7 +238,7 @@ async def comandos(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             "/adicionar NID:5678 IP:192.168.0.123 SETOR:Administração"),
         ("/buscar <SETOR>", "Busca impressoras por setor ou parte do nome do setor. Exemplo: ", 
             "/buscar adm"),
-        ("/buscarErro", "Lista todas as impressoras que apresentaram erro ao tentar exibir os contadores.")
+        ("/buscarErro", "Lista todas as impressoras que apresentaram erro ao tentar exibir os contadores."),
         ("/comandos", "Lista todos os comandos disponíveis no bot, com exemplos."),
         ("/remover NID:<NID>", "Remove uma impressora da lista de impressoras com base no NID"),
         ("/removerIP IP:<IP>", "Remove uma impressora da lista de impressoras com base no IP"),

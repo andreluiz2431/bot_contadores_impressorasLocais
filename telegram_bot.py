@@ -1,4 +1,4 @@
-from telegram import Update
+from telegram import Update, BotCommand
 from telegram.ext import Application, CommandHandler, ContextTypes
 from pysnmp.hlapi import getCmd, SnmpEngine, CommunityData, UdpTransportTarget, ContextData, ObjectType, ObjectIdentity
 from dotenv import load_dotenv
@@ -52,26 +52,6 @@ def get_snmp_data(ip, oid):
     except Exception as e:
         print(f"Falha ao conectar com a impressora {ip}: {e}")
         return None
-
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Mensagem de boas-vindas e instruções sobre os comandos disponíveis."""
-    await update.message.reply_text(
-        "Olá! Bem-vindo ao bot de gerenciamento de impressoras. Aqui estão os comandos disponíveis:\n\n"
-        "/contadores - Mostra os contadores de todas as impressoras.\n"
-        "/contador ip:<IP> - Mostra o contador de uma impressora específica com o endereço IP informado. Exemplo: /contador ip:192.168.0.222\n"
-        "/contador NID:<NID> - Mostra o contador de uma impressora específica com o NID informado. Exemplo: /contador NID:1234\n\n"
-        "**Atualizações de Impressoras:**\n"
-        "/atualizarNID NID:<NID_ATUAL> PARA:<NOVO_NID> - Atualiza o NID de uma impressora. Exemplo: /atualizarNID NID:1234 PARA:5678\n"
-        "/atualizarIP NID:<NID> PARA:<NOVO_IP> - Atualiza o IP de uma impressora. Exemplo: /atualizarIP NID:1234 PARA:192.168.0.123\n"
-        "/atualizarSetor NID:<NID> PARA:<NOVO_SETOR> - Atualiza o setor de uma impressora. Exemplo: /atualizarSetor NID:1234 PARA:Novo Setor\n\n"
-        "**Novos Comandos:**\n"
-        "/adicionar NID:<NID> IP:<IP> SETOR:<SETOR> - Adiciona uma nova impressora ao sistema. Exemplo: /adicionar NID:5678 IP:192.168.0.123 SETOR:Administração\n"
-        "/buscar <SETOR> - Busca impressoras por setor ou parte do nome do setor. Exemplo: /buscar adm\n"
-        "/buscarErro - Lista todas as impressoras que apresentaram erro ao tentar exibir os contadores."
-        "/comandos - Lista todos os coamdos disponíveis no bot, com exemplos."
-        "/remover NID:<NID> - Remove uma impressora da lista de impressoras com base no NID"
-        "/remover IP:<IP> - Remove uma impressora da lista de impressoras com base no IP"
-    )
     
 async def contadores(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
@@ -89,8 +69,8 @@ async def contadores(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
 async def contador(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
-        match_ip = re.search(r'ip:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', update.message.text)
-        match_nid = re.search(r'NID:(\d+)', update.message.text)
+        match_ip = re.search(r'ip:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', update.message.text, re.IGNORECASE)
+        match_nid = re.search(r'NID:(\d+)', update.message.text, re.IGNORECASE)
 
         if match_ip:
             ip = match_ip.group(1)
@@ -132,7 +112,7 @@ async def contador(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def atualizar_nid(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         # Usa expressão regular para capturar os valores YYYY (NID atual) e XXXX (novo NID)
-        match = re.search(r'NID:(\d+)\s+PARA:(\d+)', update.message.text)
+        match = re.search(r'NID:(\d+)\s+PARA:(\d+)', update.message.text, re.IGNORECASE)
         if match:
             old_nid = match.group(1)  # NID atual
             new_nid = match.group(2)  # Novo NID
@@ -161,7 +141,7 @@ async def atualizar_nid(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 async def atualizar_ip(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         # Usa expressão regular para capturar o NID e o novo IP
-        match = re.search(r'NID:(\d+)\s+PARA:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', update.message.text)
+        match = re.search(r'NID:(\d+)\s+PARA:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', update.message.text, re.IGNORECASE)
         if match:
             nid = match.group(1)  # NID atual
             new_ip = match.group(2)  # Novo IP
@@ -192,7 +172,7 @@ async def atualizar_ip(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 async def atualizar_setor(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         # Usa expressão regular para capturar o NID e o novo setor
-        match = re.search(r'NID:(\d+)\s+PARA:(.+)', update.message.text)
+        match = re.search(r'NID:(\d+)\s+PARA:(.+)', update.message.text, re.IGNORECASE)
         if match:
             nid = match.group(1)  # NID atual
             new_location = match.group(2)  # Novo setor
@@ -218,9 +198,7 @@ async def atualizar_setor(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     except Exception as e:
         await update.message.reply_text(f"Ocorreu um erro ao executar o comando: {e}")
 
-async def comandos(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Lista todos os comandos disponíveis no bot, enviando um por mensagem."""
-    
+async def mostra_comandos(update):
     # Lista de comandos com suas descrições e exemplos
     comandos_list = [
         ("/contadores", "Mostra os contadores de todas as impressoras."),
@@ -243,7 +221,7 @@ async def comandos(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         ("/remover NID:<NID>", "Remove uma impressora da lista de impressoras com base no NID"),
         ("/remover IP:<IP>", "Remove uma impressora da lista de impressoras com base no IP"),
     ]
-
+    
     # Enviar cada comando e descrição em uma mensagem separada
     for comando in comandos_list:
         if len(comando) == 2:
@@ -252,13 +230,18 @@ async def comandos(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             await update.message.reply_text(f"{comando[0]} - {comando[1]}")
             await update.message.reply_text(f"{comando[2]}")
 
+async def comandos(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Lista todos os comandos disponíveis no bot, enviando um por mensagem."""
+
+    await mostra_comandos(update)
+
 async def adicionar_impressora(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Adiciona uma nova impressora ao arquivo printers.json."""
     try:
         # Extrair os parâmetros NID, IP e SETOR do comando
-        match_nid = re.search(r'NID:(\d+)', update.message.text)
-        match_ip = re.search(r'IP:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', update.message.text)
-        match_setor = re.search(r'SETOR:(\w+)', update.message.text)
+        match_nid = re.search(r'NID:(\d+)', update.message.text, re.IGNORECASE)
+        match_ip = re.search(r'IP:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', update.message.text, re.IGNORECASE)
+        match_setor = re.search(r'SETOR:(\w+)', update.message.text, re.IGNORECASE)
 
         # Validar os parâmetros
         if not match_nid or not match_ip or not match_setor:
@@ -340,8 +323,8 @@ async def remover_impressora(update: Update, context: ContextTypes.DEFAULT_TYPE)
     """Remove uma impressora da lista de impressoras com base no NID ou IP."""
     try:
         # Extrair o parâmetro NID ou IP do comando
-        match_nid = re.search(r'NID:(\d+)', update.message.text)
-        match_ip = re.search(r'IP:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', update.message.text)
+        match_nid = re.search(r'NID:(\d+)', update.message.text, re.IGNORECASE)
+        match_ip = re.search(r'IP:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', update.message.text, re.IGNORECASE)
 
         if match_nid:
             nid = match_nid.group(1)
@@ -378,6 +361,18 @@ async def remover_impressora(update: Update, context: ContextTypes.DEFAULT_TYPE)
     except Exception as e:
         await update.message.reply_text(f"Ocorreu um erro ao remover a impressora: {e}")
 
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Mensagem de boas-vindas e instruções sobre os comandos disponíveis."""
+    await update.message.reply_text(
+        "Olá! Bem-vindo ao bot de gerenciamento de impressoras. Aqui estão os comandos disponíveis:\n\n"
+    )
+
+    # Zerar lista global para armazenar impressoras com erro
+    impressoras_com_erro.clear()
+
+    # Enviar cada comando e descrição em uma mensagem separada
+    await mostra_comandos(update)
+
 def main() -> None:
     application = Application.builder().token(TOKEN).build()
 
@@ -394,6 +389,14 @@ def main() -> None:
     application.add_handler(CommandHandler('buscarErro', buscar_erro))
     application.add_handler(CommandHandler('remover', remover_impressora))
 
+    # Lista de comandos
+    commands = [
+        BotCommand("start", "Inicia o bot"),
+        BotCommand("comandos", "Mostra as opções de comandos"),
+        BotCommand("contadores", "Mostra os contadores de todas as impressoras"),   
+    ]
+
+    application.bot.set_my_commands(commands)
     application.run_polling()
 
 if __name__ == '__main__':

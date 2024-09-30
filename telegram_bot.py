@@ -1,4 +1,4 @@
-from telegram import Update
+from telegram import Update, BotCommand
 from telegram.ext import Application, CommandHandler, ContextTypes
 from pysnmp.hlapi import getCmd, SnmpEngine, CommunityData, UdpTransportTarget, ContextData, ObjectType, ObjectIdentity
 from dotenv import load_dotenv
@@ -389,6 +389,14 @@ def main() -> None:
     application.add_handler(CommandHandler('buscarErro', buscar_erro))
     application.add_handler(CommandHandler('remover', remover_impressora))
 
+    # Lista de comandos
+    commands = [
+        BotCommand("start", "Inicia o bot"),
+        BotCommand("comandos", "Mostra as opções de comandos"),
+        BotCommand("contadores", "Mostra os contadores de todas as impressoras"),   
+    ]
+
+    application.bot.set_my_commands(commands)
     application.run_polling()
 
 if __name__ == '__main__':

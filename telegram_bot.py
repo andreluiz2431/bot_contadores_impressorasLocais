@@ -1,4 +1,4 @@
-from telegram import Update, BotCommand
+from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 from pysnmp.hlapi import getCmd, SnmpEngine, CommunityData, UdpTransportTarget, ContextData, ObjectType, ObjectIdentity
 from dotenv import load_dotenv
@@ -27,6 +27,9 @@ impressoras_com_erro = []
 # OID para o contador de páginas (verifique a OID correta para sua impressora)
 page_counter_oid = '1.3.6.1.2.1.43.10.2.1.4.1.1'  # Exemplo comum, pode variar de acordo com a MIB da impressora
 
+# OID para modelo de dispositivo (sysDescr)
+device_model_oid = '1.3.6.1.2.1.1.1.0'
+
 def get_snmp_data(ip, oid):
     """Função para coletar dados SNMP de uma impressora Samsung."""
     try:
@@ -52,6 +55,111 @@ def get_snmp_data(ip, oid):
     except Exception as e:
         print(f"Falha ao conectar com a impressora {ip}: {e}")
         return None
+
+def get_printer_model(ip):
+    """Função para obter o modelo da impressora via SNMP."""
+    model = get_snmp_data(ip, device_model_oid)
+    if model is not None:
+        return str(model)
+    else:
+        return "Modelo desconhecido"
+
+# Adicionando OIDs específicos para vários modelos baseados em substrings
+def get_printer_status(ip):
+    """Função para obter o status da impressora e o modelo automaticamente."""
+    # Primeiro, buscar o modelo da impressora
+    model = get_printer_model(ip)
+
+    # Verifica o modelo obtido para ajustar as OIDs com base em substrings
+    if "SL-M4070FR" in model:
+        status_oid = '1.3.6.1.2.1.25.3.5.1.1'  # OID de status específica para Samsung SL-M4070FR
+        error_oid = '1.3.6.1.2.1.43.18.1.1.8.1'  # OID de erro específica
+    elif "iR1643i" in model:
+        status_oid = '1.3.6.1.4.1.1602.1.11.5.1'  # OID de status específica para Canon iR1643i
+        error_oid = '1.3.6.1.2.1.43.18.1.1.8.1'  # OID de erro
+    elif "SCX-483x" in model:
+        status_oid = '1.3.6.1.2.1.25.3.2.1.5'  # OID de status para Samsung SCX-483x
+        error_oid = '1.3.6.1.2.1.43.18.1.1.8.1'  # OID de erro
+    else:
+        # Caso o modelo não seja reconhecido, usar OIDs genéricos ou um fallback
+        status_oid = '1.3.6.1.2.1.25.3.2.1.5'  # Status genérico
+        error_oid = '1.3.6.1.2.1.43.18.1.1.8.1'  # Erro genérico
+
+    # Obter status e erros usando as OIDs específicas ou genéricas
+    try:
+        status = get_snmp_data(ip, status_oid)
+    except Exception as e:
+        print(f"Erro no status SNMP na impressora {ip} - {e}")
+        status = None
+
+    try:
+        error_status = get_snmp_data(ip, error_oid)
+    except Exception as e:
+        print(f"Erro no status SNMP na impressora {ip} - {e}")
+        error_status = None
+
+    if status is None or error_status is None:
+        return f"Modelo: {model} | Não foi possível obter status ou erro."
+
+    # Mapear o status e os erros
+    status_mapping = {
+        1: "Outro",
+        2: "Ligado",
+        3: "Desligado",
+        4: "Em aquecimento",
+        5: "Aguardando",
+        6: "Processando",
+        7: "Atolamento de papel",
+        8: "Sem papel",
+        9: "Toner baixo",
+        10: "Erro desconhecido"
+    }
+
+    error_mapping = {
+        0: "Nenhum erro",
+        1: "Obstrução na bandeja 1",
+        2: "Obstrução na bandeja 2",
+        # Adicione mais códigos conforme necessário
+    }
+
+    return f"Modelo: {model} | Status: {status_mapping.get(int(status), 'Desconhecido')} | Erro: {error_mapping.get(int(error_status), 'Nenhum erro detectado')}"
+
+# Função para o comando /status
+async def status_impressora(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    try:
+        match_ip = re.search(r'ip:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', update.message.text, re.IGNORECASE)
+        match_nid = re.search(r'NID:(\d+)', update.message.text, re.IGNORECASE)
+
+        if match_ip:
+            ip = match_ip.group(1)
+            if ip in printers:
+                location, nid = printers[ip]
+                status_message = get_printer_status(ip)
+                if status_message:
+                    await update.message.reply_text(f"Status da impressora em {location} (IP: {ip}, NID: {nid}): {status_message}")
+                else:
+                    await update.message.reply_text(f"Não foi possível obter o status para a impressora em {location} (IP: {ip}, NID: {nid}).")
+            else:
+                await update.message.reply_text(f"IP {ip} não encontrado na lista de impressoras.")
+        elif match_nid:
+            nid = match_nid.group(1)
+
+            # Buscar impressora pelo NID
+            matching_printers = {ip: (location, printer_nid) for ip, (location, printer_nid) in printers.items() if printer_nid == nid}
+
+            if matching_printers:
+                ip, (location, _) = next(iter(matching_printers.items()))
+                status_message = get_printer_status(ip)
+                if status_message:
+                    await update.message.reply_text(f"Status da impressora em {location} (IP: {ip}, NID: {nid}): {status_message}")
+                else:
+                    await update.message.reply_text(f"Não foi possível obter o status para a impressora em {location} (IP: {ip}, NID: {nid}).")
+            else:
+                await update.message.reply_text(f"NID {nid} não encontrado na lista de impressoras.")
+        else:
+            await update.message.reply_text("Comando inválido. Use '/status ip:xxx.xxx.xxx.xxx' ou '/status NID:xxxx'.")
+    except Exception as e:
+        await update.message.reply_text(f'Ocorreu um erro ao executar o comando: {e}')
     
 async def contadores(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
@@ -388,15 +496,9 @@ def main() -> None:
     application.add_handler(CommandHandler('buscar', buscar_setor))
     application.add_handler(CommandHandler('buscarErro', buscar_erro))
     application.add_handler(CommandHandler('remover', remover_impressora))
+    # Adicionando o handler para o comando /status
+    application.add_handler(CommandHandler('status', status_impressora))
 
-    # Lista de comandos
-    commands = [
-        BotCommand("start", "Inicia o bot"),
-        BotCommand("comandos", "Mostra as opções de comandos"),
-        BotCommand("contadores", "Mostra os contadores de todas as impressoras"),   
-    ]
-
-    application.bot.set_my_commands(commands)
     application.run_polling()
 
 if __name__ == '__main__':

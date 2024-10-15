@@ -64,6 +64,7 @@ def get_printer_model(ip):
     else:
         return "Modelo desconhecido"
 
+# ESTOU COM PROBLEMA AQUI
 # Adicionando OIDs específicos para vários modelos baseados em substrings
 def get_printer_status(ip):
     """Função para obter o status da impressora e o modelo automaticamente."""

@@ -27,6 +27,7 @@ impressoras_com_erro = []
 # OID para o contador de páginas (verifique a OID correta para sua impressora)
 page_counter_oid = '1.3.6.1.2.1.43.10.2.1.4.1.1'  # Exemplo comum, pode variar de acordo com a MIB da impressora
 # OID da Pantun para o contador de páginas: 1.3.6.1.4.1.40093.8.1.6
+page_counter_oid_panton = '1.3.6.1.4.1.40093.8.1.6'
 
 def get_snmp_data(ip, oid):
     """Função para coletar dados SNMP de uma impressora Samsung."""
@@ -62,9 +63,14 @@ async def contadores(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
                 print(f"{location} ({ip}, NID: {nid}) - Contador: {contador}")
                 await update.message.reply_text(f"{location} ({ip}, NID: {nid}) - Contador: {contador}")
             else:
-                # Armazena o IP da impressora que apresentou erro
-                impressoras_com_erro.append(ip)
-                await update.message.reply_text(f"Não foi possível obter o contador para a impressora em {location} ({ip}, NID: {nid})")
+                contador = get_snmp_data(ip, page_counter_oid_panton)
+                if contador is not None:
+                    print(f"{location} ({ip}, NID: {nid}) - Contador: {contador}")
+                    await update.message.reply_text(f"{location} ({ip}, NID: {nid}) - Contador: {contador}")
+                else:
+                    # Armazena o IP da impressora que apresentou erro
+                    impressoras_com_erro.append(ip)
+                    await update.message.reply_text(f"Não foi possível obter o contador para a impressora em {location} ({ip}, NID: {nid})")
     except Exception as e:
         await update.message.reply_text(f'Ocorreu um erro ao executar o comando: {e}')
 
@@ -82,9 +88,14 @@ async def contador(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                     print(f"{location} ({ip}, NID: {nid}) - Contador: {contador}")
                     await update.message.reply_text(f"{location} ({ip}, NID: {nid}) - Contador: {contador}")
                 else:
-                    # Armazena o IP da impressora que apresentou erro
-                    impressoras_com_erro.append(ip)
-                    await update.message.reply_text(f"Não foi possível obter o contador para a impressora em {location} ({ip}, NID: {nid})")
+                    contador = get_snmp_data(ip, page_counter_oid_panton)
+                    if contador is not None:
+                        print(f"{location} ({ip}, NID: {nid}) - Contador: {contador}")
+                        await update.message.reply_text(f"{location} ({ip}, NID: {nid}) - Contador: {contador}")
+                    else:
+                        # Armazena o IP da impressora que apresentou erro
+                        impressoras_com_erro.append(ip)
+                        await update.message.reply_text(f"Não foi possível obter o contador para a impressora em {location} ({ip}, NID: {nid})")
             else:
                 await update.message.reply_text(f"IP {ip} não encontrado na lista de impressoras.")
         elif match_nid:
@@ -100,9 +111,14 @@ async def contador(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                     print(f"{location} ({ip}, NID: {nid}) - Contador: {contador}")
                     await update.message.reply_text(f"{location} ({ip}, NID: {nid}) - Contador: {contador}")
                 else:
-                    # Armazena o IP da impressora que apresentou erro
-                    impressoras_com_erro.append(ip)
-                    await update.message.reply_text(f"Não foi possível obter o contador para a impressora em {location} ({ip}, NID: {nid})")
+                    contador = get_snmp_data(ip, page_counter_oid_panton)
+                    if contador is not None:
+                        print(f"{location} ({ip}, NID: {nid}) - Contador: {contador}")
+                        await update.message.reply_text(f"{location} ({ip}, NID: {nid}) - Contador: {contador}")
+                    else:
+                        # Armazena o IP da impressora que apresentou erro
+                        impressoras_com_erro.append(ip)
+                        await update.message.reply_text(f"Não foi possível obter o contador para a impressora em {location} ({ip}, NID: {nid})")
             else:
                 await update.message.reply_text(f"NID {nid} não encontrado na lista de impressoras.")
         else:

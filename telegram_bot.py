@@ -26,6 +26,7 @@ impressoras_com_erro = []
 
 # OID para o contador de páginas (verifique a OID correta para sua impressora)
 page_counter_oid = '1.3.6.1.2.1.43.10.2.1.4.1.1'  # Exemplo comum, pode variar de acordo com a MIB da impressora
+# OID da Pantun para o contador de páginas: 1.3.6.1.4.1.40093.8.1.6
 
 def get_snmp_data(ip, oid):
     """Função para coletar dados SNMP de uma impressora Samsung."""
